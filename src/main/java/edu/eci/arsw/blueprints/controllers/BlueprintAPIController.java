@@ -13,6 +13,7 @@ import edu.eci.arsw.blueprints.model.Blueprint;
 import edu.eci.arsw.blueprints.services.BlueprintsServices;
 import org.apache.catalina.connector.Response;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -24,24 +25,23 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping(value = "/api")
 public class BlueprintAPIController {
 
+
     private final BlueprintsServices services;
 
-    private final Logger logger = (Logger) LoggerFactory.getLogger(BlueprintAPIController.class);
     public BlueprintAPIController(BlueprintsServices services){
         this.services = services;
     }
 
 
     @GetMapping("/blueprints")
-    public ResponseEntity<Response> getAllBlueprints() {
-        Set<Blueprint> response =  services.getAllBlueprints();
-
-        if(response.isEmpty()){
-            Logger.getLogger(BlueprintAPIController.class.getName()).log(Level.SEVERE, null, "");
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body((Response) response);
+    public ResponseEntity<?> getAllBlueprints() {
+        try {
+            Set<Blueprint> blueprints = services.getAllBlueprints();
+            return new ResponseEntity<>(blueprints, HttpStatus.ACCEPTED);
+        } catch (Exception ex) {
+            Logger.getLogger(BlueprintAPIController.class.getName()).log(Level.SEVERE, null, ex);
+            return new ResponseEntity<>("Error getting blueprints", HttpStatus.NOT_FOUND);
         }
-
-        return ResponseEntity.status(HttpStatus.OK).body((Response) response);
     }
     
     
