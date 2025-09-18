@@ -13,6 +13,7 @@ import edu.eci.arsw.blueprints.persistence.BlueprintsPersistence;
 import org.springframework.stereotype.Repository;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  *
@@ -21,7 +22,7 @@ import java.util.*;
 @Repository
 public class InMemoryBlueprintPersistence implements BlueprintsPersistence{
 
-    private final Map<Tuple<String,String>,Blueprint> blueprints=new HashMap<>();
+    private final ConcurrentHashMap<Tuple<String,String>,Blueprint> blueprints=new ConcurrentHashMap<>();
 
     public InMemoryBlueprintPersistence() {
         // Load stub data
@@ -44,7 +45,7 @@ public class InMemoryBlueprintPersistence implements BlueprintsPersistence{
             throw new BlueprintPersistenceException("The given blueprint already exists: "+bp);
         }
         else{
-            blueprints.put(new Tuple<>(bp.getAuthor(),bp.getName()), bp);
+            blueprints.putIfAbsent(new Tuple<>(bp.getAuthor(),bp.getName()), bp);
         }        
     }
 
@@ -74,6 +75,20 @@ public class InMemoryBlueprintPersistence implements BlueprintsPersistence{
         }
 
         return blueprintsByAuthor;
+    }
+
+    @Override
+    public boolean containBlueprint(Blueprint blueprint) {
+        return blueprints.containsKey(new Tuple<>(blueprint.getAuthor(), blueprint.getName()));
+    }
+
+    @Override
+    public void updateBlueprint(String author, String name, Blueprint updatedBlueprint) throws BlueprintNotFoundException {
+        Tuple<String,String> key = new Tuple<>(author, name);
+        if (!blueprints.containsKey(key)) {
+            throw new BlueprintNotFoundException("Blueprint not found: " + name + " by " + author);
+        }
+        blueprints.replace(key, updatedBlueprint);
     }
 
 

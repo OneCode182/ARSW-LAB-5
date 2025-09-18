@@ -6,9 +6,8 @@
 package edu.eci.arsw.blueprints.persistence;
 
 import edu.eci.arsw.blueprints.model.Blueprint;
-import org.springframework.stereotype.Repository;
+import edu.eci.arsw.blueprints.persistence.impl.Tuple;
 
-import java.util.List;
 import java.util.Set;
 
 /**
@@ -36,4 +35,6 @@ public interface BlueprintsPersistence {
 
     public Set<Blueprint> getBlueprints() throws BlueprintNotFoundException;
     public Set<Blueprint> getBlueprintsByAuthor(String author) throws BlueprintNotFoundException;
+    public boolean containBlueprint(Blueprint blueprint);
+    public void updateBlueprint(String author, String name, Blueprint updatedBlueprint) throws BlueprintNotFoundException ;
 }

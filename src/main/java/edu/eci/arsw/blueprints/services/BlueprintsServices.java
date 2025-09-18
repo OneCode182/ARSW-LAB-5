@@ -5,6 +5,7 @@ import edu.eci.arsw.blueprints.model.Blueprint;
 import edu.eci.arsw.blueprints.persistence.BlueprintNotFoundException;
 import edu.eci.arsw.blueprints.persistence.BlueprintPersistenceException;
 import edu.eci.arsw.blueprints.persistence.BlueprintsPersistence;
+import edu.eci.arsw.blueprints.persistence.impl.Tuple;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
@@ -65,5 +66,13 @@ public class BlueprintsServices {
         }
 
         return filteredBlueprints;
+    }
+
+    public boolean containBlueprint(Blueprint blueprint){
+        return bpp.containBlueprint(blueprint);
+    }
+
+    public void updateBlueprint(String author, String name, Blueprint updatedBlueprint) throws BlueprintNotFoundException {
+        bpp.updateBlueprint(author, name, updatedBlueprint);
     }
 }
