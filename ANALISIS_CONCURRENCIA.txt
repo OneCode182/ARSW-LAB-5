@@ -1,0 +1,88 @@
+IDENTIFICACIÓN DE CONDICIONES DE CARRERA
+========================================
+
+1. CONDICIONES DE CARRERA IDENTIFICADAS:
+
+   a) HashMap no es Thread-Safe:
+   - La implementación original usaba HashMap en InMemoryBlueprintPersistence
+   - HashMap puede corromperse con accesos concurrentes
+   - Puede resultar en bucles infinitos, pérdida de datos o inconsistencias
+
+   b) Operación no-atómica en saveBlueprint():
+   - Secuencia: verificar existencia → insertar si no existe
+   - Entre la verificación y la inserción puede ocurrir una inserción concurrente
+   - Resultado: dos hilos pueden insertar el mismo blueprint simultáneamente
+
+2. REGIONES CRÍTICAS IDENTIFICADAS:
+
+   a) Método saveBlueprint():
+   - Líneas de verificación containsKey() y put() deben ser atómicas
+   - Región crítica: desde la verificación hasta la inserción
+
+   b) Método updateBlueprint():
+   - Verificación de existencia y actualización deben ser atómicas
+   - Región crítica: desde containsKey() hasta replace()
+
+   c) Operaciones de lectura múltiple:
+   - getBlueprintsByAuthor() itera sobre la colección
+   - Puede verse afectada por modificaciones concurrentes durante la iteración
+
+SOLUCIONES IMPLEMENTADAS
+=======================
+
+1. CAMBIO DE ESTRUCTURA DE DATOS:
+   - Reemplazado: HashMap<Tuple<String,String>,Blueprint> 
+   - Por: ConcurrentHashMap<Tuple<String,String>,Blueprint>
+   - Beneficio: Operaciones básicas thread-safe, mejor rendimiento que sincronización
+
+2. OPERACIONES ATÓMICAS:
+   - saveBlueprint(): Usado putIfAbsent() en lugar de containsKey() + put()
+   - updateBlueprint(): Usado replace() que es atómica en ConcurrentHashMap
+   - Beneficio: Eliminación completa de condiciones de carrera
+
+3. ITERACIÓN SEGURA:
+   - ConcurrentHashMap permite iteración concurrente segura
+   - Los iteradores son weakly consistent (no lanzan ConcurrentModificationException)
+   - Beneficio: Lecturas no bloquean escrituras
+
+JUSTIFICACIÓN DE LA SOLUCIÓN
+===========================
+VENTAJAS de ConcurrentHashMap:
+- Segmentación interna: diferentes hilos pueden acceder a diferentes segmentos
+- Operaciones de lectura no requieren locks en la mayoría de casos
+- Operaciones atómicas built-in (putIfAbsent, replace, etc.)
+- Mejor rendimiento bajo alta concurrencia
+- Escalabilidad superior
+
+DESVENTAJAS de synchronized:
+- Bloqueo completo: un hilo bloquea a todos los demás
+- Serialización de TODAS las operaciones (incluso lecturas)
+- Degradación significativa del rendimiento
+- Posible contención de hilos y deadlocks
+
+
+ANÁLISIS DE RENDIMIENTO
+======================
+
+La solución implementada:
+- Mantiene O(1) para operaciones básicas
+- Permite concurrencia real en lugar de serialización
+- Reduce contención de hilos
+- Escala mejor con el número de hilos concurrentes
+
+PRUEBAS DE CONCURRENCIA RECOMENDADAS
+===================================
+
+1. Inserción concurrente del mismo blueprint desde múltiples hilos
+2. Actualización concurrente del mismo blueprint
+3. Lectura durante escrituras intensivas
+4. Stress test con alta concurrencia
+
+CONCLUSIONES
+============
+
+La migración a ConcurrentHashMap con operaciones atómicas:
+- Elimina todas las condiciones de carrera identificadas
+- Mantiene excelente rendimiento bajo concurrencia
+- Proporciona consistencia sin degradación significativa
+- Es una solución más elegante y mantenible que la sincronización manual
